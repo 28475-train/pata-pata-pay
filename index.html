@@ -3,144 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="manifest.json">
-    <title>お小遣い管理 Cloud Ver 3.0</title>
+    <title>お小遣い管理 Cloud Ver 3.5</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --main-color: #333; --accent-red: #d32f2f; --accent-blue: #1976d2; --bg-gray: #f8f9fa; --card-bg: #ffffff; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-gray); color: var(--main-color); overflow-x: hidden; }
+        :root { --main-color: #333; --accent-red: #d32f2f; --accent-blue: #1976d2; --bg-gray: #f8f9fa; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-gray); color: var(--main-color); }
         .hidden { display: none !important; }
+        
+        /* ページ切り替えアニメーション */
+        .page { display: none; padding-bottom: 80px; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ローディングアニメーション */
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; transition: opacity 0.3s; }
-        .train-loader { width: 50px; height: 50px; border: 5px solid #eee; border-top: 5px solid var(--accent-red); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        /* ナビゲーションバー */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; padding: 15px 0; font-size: 12px; cursor: pointer; color: #888; }
+        .nav-item.active { color: var(--main-color); font-weight: bold; }
+
+        /* ボード・カードデザイン */
+        .board { background: #1a1a1a; padding: 25px 10px; text-align: center; color: white; }
+        .patapata { display: inline-flex; gap: 4px; background: #000; padding: 8px; border-radius: 6px; }
+        .panel { width: 34px; height: 50px; background: #222; color: #fff; font-size: 36px; line-height: 50px; border-radius: 4px; font-family: monospace; border: 1px solid #444; }
+        .container { max-width: 500px; margin: auto; padding: 15px; }
+        .card { background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
+
+        /* 入力UI */
+        .type-switch { display: flex; gap: 10px; margin-bottom: 15px; }
+        .type-btn { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid #eee; background: #fff; cursor: pointer; font-weight: bold; }
+        .type-btn.active-out { border-color: var(--accent-red); color: var(--accent-red); }
+        .type-btn.active-in { border-color: var(--accent-blue); color: var(--accent-blue); }
+        input[type="text"], input[type="password"] { width: 100%; padding: 15px; border: 1px solid #eee; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        .amount-display { font-size: 32px; text-align: right; padding: 10px; background: #f8f9fa; border-radius: 10px; font-weight: bold; margin-bottom: 15px; }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+        .num-btn { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 12px; font-size: 20px; cursor: pointer; }
+        .cat-scroll { height: 120px; overflow-y: auto; border: 1px solid #eee; border-radius: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 10px; margin-bottom: 15px; }
+        .cat-btn { padding: 8px; border: 1px solid #eee; border-radius: 8px; font-size: 13px; background: #fff; }
+        .cat-btn.active { background: #333; color: #fff; }
+
+        .btn-submit { width: 100%; padding: 18px; border-radius: 12px; border: none; background: var(--main-color); color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
+
+        /* ローディング */
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .loader { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent-red); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* ログイン */
-        #login-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; position: fixed; width: 100%; top: 0; left: 0; z-index: 1000; }
-        
-        /* パタパタボード */
-        .board { background: #1a1a1a; padding: 25px 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .patapata { display: inline-flex; gap: 4px; background: #000; padding: 10px; border-radius: 6px; }
-        .panel { width: 34px; height: 55px; background: #222; color: #fff; font-size: 40px; line-height: 55px; border-radius: 4px; overflow: hidden; font-family: 'Courier New', monospace; border: 1px solid #444; }
-        .flipping { animation: flip 0.15s infinite linear; }
-        @keyframes flip { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(180deg); } }
-
-        .container { max-width: 500px; margin: auto; padding: 15px; display: grid; gap: 15px; opacity: 0; transform: translateY(10px); transition: 0.5s ease-out; }
-        .container.show { opacity: 1; transform: translateY(0); }
-        
-        .card { background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; }
-        
-        /* 収支スイッチ */
-        .type-switch { display: flex; gap: 10px; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 12px; }
-        .type-btn { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: transparent; transition: 0.3s; font-size: 15px; }
-        .type-btn.active-out { background: var(--accent-red); color: white; }
-        .type-btn.active-in { background: var(--accent-blue); color: white; }
-
-        input[type="text"], input[type="password"] { width: 100%; padding: 15px; border: 2px solid #f0f0f0; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; transition: 0.3s; }
-        
-        .amount-display { font-size: 38px; text-align: right; padding: 15px; background: #f8f9fa; border-radius: 12px; margin-bottom: 15px; font-family: 'Roboto Mono', monospace; font-weight: bold; color: #333; border: 2px solid #eee; }
-
-        /* テンキー */
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .num-btn { background: #fff; border: 1px solid #eee; padding: 18px; border-radius: 15px; font-size: 24px; font-weight: 600; cursor: pointer; transition: 0.1s; }
-        .num-btn:active { background: #f0f0f0; transform: scale(0.95); }
-
-        /* カテゴリ */
-        .cat-scroll-area { height: 160px; overflow-y: auto; border: 2px solid #f8f9fa; border-radius: 12px; padding: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; background: #fafafa; }
-        .cat-btn { padding: 12px; border: 1px solid #eee; border-radius: 10px; background: #fff; font-size: 14px; cursor: pointer; transition: 0.2s; text-align: center; }
-        .cat-btn.active { background: #333; color: #fff; border-color: #333; }
-
-        .btn-submit { width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; background: var(--main-color); color: white; transition: 0.3s; }
-
-        .history-item { display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid #f8f9fa; }
-        .history-amount { font-weight: bold; font-size: 18px; }
-        .history-amount.plus { color: var(--accent-blue); }
-        .history-amount.minus { color: var(--accent-red); }
-
-        .footer-ver { text-align: center; color: #ccc; font-size: 11px; margin: 30px 0; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay">
-    <div class="train-loader"></div>
-    <div style="font-size: 12px; color: #999;">読み込み中...</div>
-</div>
+<div id="loading" class="hidden"><div class="loader"></div></div>
 
-<div id="login-screen">
-    <div style="text-align:center; width: 80%;">
-        <h2 style="letter-spacing: 2px;">AUTHENTICATION</h2>
-        <input type="password" id="pass-input" placeholder="パスコードを入力">
-        <button class="btn-submit" onclick="checkPass()">ログイン</button>
+<div id="login-screen" style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff;">
+    <div style="width:80%; text-align:center;">
+        <h2>AUTHENTICATION</h2>
+        <input type="password" id="pass-input" placeholder="PASSCODE">
+        <button class="btn-submit" onclick="checkPass()">LOGIN</button>
     </div>
 </div>
 
 <div id="main-content" class="hidden">
-    <div class="board">
-        <div style="color:#666; font-size:11px; margin-bottom:8px; font-weight:bold; letter-spacing:2px;">TOTAL BALANCE</div>
-        <div class="patapata" id="total-display"></div>
-    </div>
     
-    <div class="container" id="main-container">
-        <div class="card">
-            <div class="type-switch">
-                <button class="type-btn active-out" id="btn-out" onclick="setType('支出')">支払い (-)</button>
-                <button class="type-btn" id="btn-in" onclick="setType('収入')">入金 (+)</button>
-            </div>
-            
-            <input type="text" id="item" placeholder="内容（例：おにぎり）">
-            <div class="amount-display" id="num-display">0</div>
-            
-            <div class="numpad">
-                <button class="num-btn" onclick="addNum('1')">1</button>
-                <button class="num-btn" onclick="addNum('2')">2</button>
-                <button class="num-btn" onclick="addNum('3')">3</button>
-                <button class="num-btn" onclick="addNum('4')">4</button>
-                <button class="num-btn" onclick="addNum('5')">5</button>
-                <button class="num-btn" onclick="addNum('6')">6</button>
-                <button class="num-btn" onclick="addNum('7')">7</button>
-                <button class="num-btn" onclick="addNum('8')">8</button>
-                <button class="num-btn" onclick="addNum('9')">9</button>
-                <button class="num-btn" onclick="clearNum()" style="color:var(--accent-red)">C</button>
-                <button class="num-btn" onclick="addNum('0')">0</button>
-                <button class="num-btn" onclick="backspace()" style="color:#888;">BS</button>
-            </div>
-
-            <div class="cat-scroll-area" id="cat-area"></div>
-            <button class="btn-submit" id="submit-btn" onclick="submitData()">保存する</button>
+    <div id="page-input" class="page active">
+        <div class="board">
+            <div style="font-size:11px; color:#888; margin-bottom:5px;">CURRENT BALANCE</div>
+            <div class="patapata" id="total-display"></div>
         </div>
-
-        <div class="card">
-            <h3 style="margin:0 0 15px 0; font-size:16px;">履歴</h3>
-            <button onclick="deleteAllHistory()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:#ccc; font-size:11px; cursor:pointer;">履歴消去</button>
-            <div id="history-list"></div>
-            <button class="btn-submit" style="background:#fff; color:#ccc; border:1px solid #eee; margin-top:20px; font-size:12px;" onclick="logout()">ログアウト</button>
+        <div class="container">
+            <div class="card">
+                <div class="type-switch">
+                    <button class="type-btn active-out" id="btn-out" onclick="setType('支出')">支払い (-)</button>
+                    <button class="type-btn" id="btn-in" onclick="setType('収入')">入金 (+)</button>
+                </div>
+                <input type="text" id="item" placeholder="内容（例：ランチ）">
+                <div class="amount-display" id="num-display">0</div>
+                <div class="numpad">
+                    <script>for(let i=1;i<=9;i++)document.write(`<button class="num-btn" onclick="addNum('${i}')">${i}</button>`);</script>
+                    <button class="num-btn" onclick="clearNum()">C</button>
+                    <button class="num-btn" onclick="addNum('0')">0</button>
+                    <button class="num-btn" onclick="backspace()">BS</button>
+                </div>
+                <div class="cat-scroll" id="cat-area"></div>
+                <button class="btn-submit" onclick="submitData()">保存する</button>
+            </div>
         </div>
-        
-        <div class="footer-ver">POCKET MONEY CLOUD SYSTEM Ver 3.0</div>
+    </div>
+
+    <div id="page-chart" class="page">
+        <div class="container">
+            <div class="card">
+                <h3>支出分析 (今月)</h3>
+                <canvas id="myChart"></canvas>
+            </div>
+            <div class="card">
+                <h3>履歴</h3>
+                <button onclick="deleteAllHistory()" style="float:right; border:none; color:red; font-size:11px; background:none;">全消去</button>
+                <div id="history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="showPage('input', this)">入力</div>
+        <div class="nav-item" onclick="showPage('chart', this)">分析・履歴</div>
+        <div class="nav-item" onclick="logout()">終了</div>
     </div>
 </div>
 
 <script>
-const GAS_URL = "ここにGASのURLを貼り付け";
+const GAS_URL = "ここにGASのデプロイURLを貼り付け";
 const CORRECT_PASS = "518yhy01";
 let selectedType = "支出";
 let selectedCat = "食費";
 let currentAmount = "";
+let chartInstance = null;
 
 const categories = ["食費","飲み物","趣味","交通費","日用品","衣服","美容","医療","家賃","光熱費","通信費","教育","交際費","娯楽","自分磨き","コンビニ","スーパー","外食","カフェ","ランチ","ディナー","お菓子","酒","タバコ","電車","バス","タクシー","ガソリン","駐車場","映画","ゲーム","本","雑誌","サブスク","雑貨","家具","家電","文房具","洗剤","薬","サプリ","美容院","化粧品","靴","バッグ","プレゼント","慶弔費","貯金","投資","保険","税金","振込手数料","雑費","不明","旅行","宿泊","レジャー","スポーツ","ジム","ペット","家族","子供","習い事","イベント","ライブ","カラオケ","漫画","アニメ","フィギュア","カードゲーム","模型","キャンプ","釣り","登山","自転車","バイク","レンタカー","修理費","送料","メルカリ","Amazon","楽天","100均","デパート","ドラッグストア","本屋","電気街","チケット","会費","寄付","お年玉","給料","お小遣い","臨時収入","ボーナス","利息","売上","還付金","その他"];
 
 window.onload = () => {
     renderCats();
-    if (localStorage.getItem('keikyu_pass') === CORRECT_PASS) {
-        enterApp();
-    } else {
-        hideLoading();
-    }
+    if (localStorage.getItem('keikyu_pass') === CORRECT_PASS) enterApp();
 };
 
-function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
-function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
+function showPage(pageId, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + pageId).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    if(pageId === 'chart') updateChart();
+}
 
 function renderCats() {
     const area = document.getElementById('cat-area');
@@ -163,7 +152,7 @@ function setType(t) {
     document.getElementById('btn-in').className = 'type-btn' + (t==='収入'?' active-in':'');
 }
 
-function addNum(n) { if(currentAmount.length < 8) currentAmount += n; updateDisplay(); }
+function addNum(n) { currentAmount += n; updateDisplay(); }
 function clearNum() { currentAmount = ""; updateDisplay(); }
 function backspace() { currentAmount = currentAmount.slice(0, -1); updateDisplay(); }
 function updateDisplay() { document.getElementById('num-display').innerText = currentAmount ? parseInt(currentAmount).toLocaleString() : "0"; }
@@ -172,37 +161,27 @@ function checkPass() {
     if (document.getElementById('pass-input').value === CORRECT_PASS) {
         localStorage.setItem('keikyu_pass', CORRECT_PASS);
         enterApp();
-    } else { alert("パスワードが違います"); }
+    } else { alert("PASS ERROR"); }
 }
 
 async function enterApp() {
-    showLoading();
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('main-content').classList.remove('hidden');
     initPanels();
-    await loadData();
-    hideLoading();
-    document.getElementById('main-container').classList.add('show');
+    loadData();
 }
 
 function initPanels() { 
     const d = document.getElementById('total-display'); d.innerHTML = ''; 
-    for(let i=0; i<6; i++) d.innerHTML += '<div class="panel flipping">0</div>'; 
+    for(let i=0; i<6; i++) d.innerHTML += '<div class="panel">0</div>'; 
 }
 
 async function submitData() {
     const item = document.getElementById('item').value;
-    if(!item || !currentAmount) return alert("入力してください");
-    showLoading();
-    const finalAmount = selectedType === "支出" ? "-" + currentAmount : currentAmount;
-    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "add", item, amount: finalAmount, category: selectedCat }) });
-    location.reload();
-}
-
-async function deleteAllHistory() {
-    if(!confirm("履歴をすべて消去しますか？")) return;
-    showLoading();
-    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "clear" }) });
+    if(!item || !currentAmount) return alert("入力ミス");
+    document.getElementById('loading').classList.remove('hidden');
+    const amt = selectedType === "支出" ? "-" + currentAmount : currentAmount;
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ item, amount: amt, category: selectedCat }) });
     location.reload();
 }
 
@@ -212,19 +191,54 @@ async function loadData() {
     let total = 0;
     const list = document.getElementById('history-list');
     list.innerHTML = '';
+    
     data.forEach(row => {
-        const val = parseInt(row.amount||0);
+        const val = parseInt(row.amount);
         total += val;
-        list.insertAdjacentHTML('afterbegin', `<div class="history-item">
-            <div style="flex:1"><b>${row.item}</b><br><small style="color:#aaa">${row.category}</small></div>
-            <div class="history-amount ${val >= 0 ? 'plus' : 'minus'}">${val >= 0 ? '+' : ''}${val.toLocaleString()}</div>
+        list.insertAdjacentHTML('afterbegin', `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
+            <div><b>${row.item}</b><br><small>${row.category}</small></div>
+            <div style="font-weight:bold; color:${val>=0?'blue':'red'}">${val.toLocaleString()}</div>
         </div>`);
     });
+    
     const s = Math.abs(total).toString().padStart(6, '0');
-    document.querySelectorAll('.panel').forEach((p, i) => { 
-        setTimeout(() => { p.classList.remove('flipping'); p.innerText = s[i]; }, i*100+500); 
+    document.querySelectorAll('.panel').forEach((p, i) => { p.innerText = s[i]; });
+    window.allData = data; // グラフ用にグローバル保存
+}
+
+function updateChart() {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const catTotals = {};
+    
+    window.allData.forEach(d => {
+        const val = parseInt(d.amount);
+        if (val < 0) { // 支出のみ集計
+            catTotals[d.category] = (catTotals[d.category] || 0) + Math.abs(val);
+        }
+    });
+
+    if (chartInstance) chartInstance.destroy();
+    
+    chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(catTotals),
+            datasets: [{
+                data: Object.values(catTotals),
+                backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0', '#f67019']
+            }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
     });
 }
+
+async function deleteAllHistory() {
+    if(!confirm("削除しますか？")) return;
+    document.getElementById('loading').classList.remove('hidden');
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "clear" }) });
+    location.reload();
+}
+
 function logout() { localStorage.removeItem('keikyu_pass'); location.reload(); }
 </script>
 </body>
