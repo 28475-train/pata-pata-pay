@@ -4,160 +4,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
-    <title>お小遣い管理 Cloud Ver 2.5</title>
+    <title>お小遣い管理 Cloud Ver 2.6</title>
     <style>
-        :root { --main-color: #333; --accent-red: #e60012; --bg-gray: #f5f5f7; --card-bg: #ffffff; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg-gray); color: var(--main-color); -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        :root { --main-color: #333; --accent-red: #e60012; --accent-blue: #0052a4; --bg-gray: #f5f5f7; --card-bg: #ffffff; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-gray); color: var(--main-color); overflow-x: hidden; }
         .hidden { display: none !important; }
         
-        /* ログイン・待機画面 */
         #login-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; position: fixed; width: 100%; top: 0; left: 0; z-index: 1000; }
-        .loader-text { margin-bottom: 20px; font-size: 14px; color: #888; letter-spacing: 2px; }
         .blink { animation: blink 1s step-end infinite; }
         @keyframes blink { 50% { opacity: 0; } }
 
-        /* パタパタ表示エリア */
         .board { background: #222; padding: 25px 10px; text-align: center; border-bottom: 4px solid #ddd; }
         .patapata { display: inline-flex; gap: 4px; background: #000; padding: 10px; border-radius: 4px; }
-        .panel { width: 32px; height: 50px; background: #1a1a1a; color: #fff; font-size: 36px; line-height: 50px; border-radius: 4px; overflow: hidden; font-family: 'Courier New', monospace; position: relative; border: 1px solid #333; }
-        .panel::after { content: ""; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: rgba(0,0,0,0.5); }
+        .panel { width: 32px; height: 50px; background: #1a1a1a; color: #fff; font-size: 36px; line-height: 50px; border-radius: 4px; overflow: hidden; font-family: monospace; position: relative; border: 1px solid #333; }
         .flipping { animation: flip 0.1s infinite; }
         @keyframes flip { 0% { transform: rotateX(0deg); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg); } }
         
-        .container { max-width: 600px; margin: auto; padding: 20px; display: grid; gap: 20px; }
+        .container { max-width: 600px; margin: auto; padding: 15px; display: grid; gap: 15px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        h3 { margin: 0 0 15px 0; font-size: 16px; color: #666; }
         
-        input[type="text"], input[type="password"] { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; background: #fafafa; }
-        .amount-display { font-size: 32px; text-align: right; padding: 10px; background: #f0f0f0; border-radius: 8px; margin-bottom: 15px; font-family: monospace; font-weight: bold; min-height: 48px; }
+        /* 収支切り替えスイッチ */
+        .type-switch { display: flex; gap: 10px; margin-bottom: 15px; }
+        .type-btn { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid #eee; font-weight: bold; cursor: pointer; background: #fff; }
+        .type-btn.active-out { border-color: var(--accent-red); color: var(--accent-red); background: #fff1f1; }
+        .type-btn.active-in { border-color: var(--accent-blue); color: var(--accent-blue); background: #f1f5ff; }
+
+        input[type="text"] { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        .amount-display { font-size: 32px; text-align: right; padding: 10px; background: #f0f0f0; border-radius: 8px; margin-bottom: 10px; font-family: monospace; font-weight: bold; }
         
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
-        .num-btn { background: #fff; border: 1px solid #eee; padding: 18px; border-radius: 10px; font-size: 20px; font-weight: 500; cursor: pointer; }
-        .num-btn:active { background: #f0f0f0; }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 15px; }
+        .num-btn { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 8px; font-size: 18px; cursor: pointer; }
         
-        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .cat-btn { padding: 12px; border: 1px solid #eee; border-radius: 10px; background: #fff; font-size: 14px; cursor: pointer; }
-        .cat-btn.active { background: var(--main-color); color: #fff; border-color: var(--main-color); }
+        /* カテゴリ選択エリア（スクロール対応） */
+        .cat-scroll-area { height: 120px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; padding: 5px; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .cat-btn { padding: 8px; border: 1px solid #eee; border-radius: 6px; background: #fafafa; font-size: 13px; cursor: pointer; text-align: center; }
+        .cat-btn.active { background: var(--main-color); color: #fff; }
         
-        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-black { background: var(--main-color); color: white; }
-        .btn-gray { background: #eee; color: #666; }
-        .btn-submit { background: var(--accent-red); color: white; margin-top: 20px; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-submit { background: var(--main-color); color: white; margin-top: 10px; }
         
-        .history-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-        .history-item img { width: 45px; height: 45px; border-radius: 8px; margin-right: 12px; object-fit: cover; background: #eee; }
-        .history-info { flex-grow: 1; }
-        .history-name { font-weight: bold; font-size: 15px; }
-        .history-cat { font-size: 12px; color: #999; }
-        .history-amount { font-weight: bold; color: var(--accent-red); }
+        .history-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .history-amount.plus { color: var(--accent-blue); }
+        .history-amount.minus { color: var(--accent-red); }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
-    <div id="loading-view" class="hidden">
-        <div class="loader-text blink">LOADING...</div>
-        <div style="font-size:12px; color:#ccc;">まもなく到着します</div>
-    </div>
-    <div id="pass-area" style="text-align:center; width: 80%; max-width: 300px;">
-        <div style="font-weight:bold; margin-bottom:20px; font-size:18px;">認証が必要です</div>
-        <input type="password" id="pass-input" placeholder="パスワードを入力">
-        <button class="btn btn-black" id="login-btn" onclick="checkPass()">ログイン</button>
+    <div id="loading-view" class="hidden"><div class="loader-text blink">LOADING...</div></div>
+    <div id="pass-area" style="text-align:center;">
+        <input type="password" id="pass-input" placeholder="パスワード" style="padding:10px; margin-bottom:10px;"><br>
+        <button class="btn btn-submit" style="width:200px;" onclick="checkPass()">ログイン</button>
     </div>
 </div>
 
 <div id="main-content" class="hidden">
     <div class="board">
-        <div style="color:#888; font-size:10px; margin-bottom:8px; letter-spacing:1px;">TOTAL BALANCE</div>
+        <div style="color:#888; font-size:10px; margin-bottom:5px;">TOTAL BALANCE</div>
         <div class="patapata" id="total-display"></div>
     </div>
     <div class="container">
         <div class="card">
-            <h3>支出の記録</h3>
-            <input type="text" id="item" placeholder="何を買いましたか？">
+            <div class="type-switch">
+                <button class="type-btn active-out" id="btn-out" onclick="setType('支出')">支払い (-)</button>
+                <button class="type-btn" id="btn-in" onclick="setType('収入')">入金 (+)</button>
+            </div>
+            
+            <input type="text" id="item" placeholder="内容（例：おにぎり）">
             <div class="amount-display" id="num-display">0</div>
+            
             <div class="numpad">
-                <button class="num-btn" onclick="addNum('1')">1</button>
-                <button class="num-btn" onclick="addNum('2')">2</button>
-                <button class="num-btn" onclick="addNum('3')">3</button>
-                <button class="num-btn" onclick="addNum('4')">4</button>
-                <button class="num-btn" onclick="addNum('5')">5</button>
-                <button class="num-btn" onclick="addNum('6')">6</button>
-                <button class="num-btn" onclick="addNum('7')">7</button>
-                <button class="num-btn" onclick="addNum('8')">8</button>
-                <button class="num-btn" onclick="addNum('9')">9</button>
-                <button class="num-btn" onclick="clearNum()" style="color:var(--accent-red);">C</button>
+                <script>
+                    for(let i=1; i<=9; i++) document.write(`<button class="num-btn" onclick="addNum('${i}')">${i}</button>`);
+                </script>
+                <button class="num-btn" onclick="clearNum()" style="color:red">C</button>
                 <button class="num-btn" onclick="addNum('0')">0</button>
                 <button class="num-btn" onclick="addNum('00')">00</button>
             </div>
-            <div class="cat-grid">
-                <button class="cat-btn active" onclick="setCat(this, '食費')">食費</button>
-                <button class="cat-btn" onclick="setCat(this, '趣味')">趣味</button>
-            </div>
-            <button class="btn btn-gray" onclick="document.getElementById('photo').click()">📷 写真を添付</button>
-            <input type="file" id="photo" accept="image/*" capture="camera" class="hidden">
+
+            <div style="font-size:12px; color:#888; margin-bottom:5px;">カテゴリ選択</div>
+            <div class="cat-scroll-area" id="cat-area"></div>
+
             <button class="btn btn-submit" id="submit-btn" onclick="submitData()">記録を保存する</button>
         </div>
-        <div class="card">
-            <h3>最近の履歴</h3>
-            <div id="history-list"></div>
-            <button class="btn" style="color:#999; font-size:12px; margin-top:20px;" onclick="logout()">ログアウト</button>
-        </div>
+        <div class="card"><h3>履歴</h3><div id="history-list"></div></div>
     </div>
 </div>
 
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxvxWL1MW3Gd23Fs6rHm0VF6oNa_c3F4_8gzOZ9YOhf6C4YvrTjBUwRp5ON2Dn62zTA/exec";
 const CORRECT_PASS = "518yhy01";
+let selectedType = "支出";
 let selectedCat = "食費";
 let currentAmount = "";
 
+// カテゴリ100個の生成
+const categories = ["食費","飲み物","趣味","交通費","日用品","衣服","美容","医療","家賃","光熱費","通信費","教育","交際費","娯楽","自分磨き","コンビニ","スーパー","外食","カフェ","ランチ","ディナー","お菓子","酒","タバコ","電車","バス","タクシー","ガソリン","駐車場","映画","ゲーム","本","雑誌","サブスク","雑貨","家具","家電","文房具","洗剤","薬","サプリ","美容院","化粧品","靴","バッグ","プレゼント","慶弔費","貯金","投資","保険","税金","振込手数料","雑費","不明","旅行","宿泊","レジャー","スポーツ","ジム","ペット","家族","子供","習い事","イベント","ライブ","カラオケ","漫画","アニメ","フィギュア","カードゲーム","模型","キャンプ","釣り","登山","自転車","バイク","レンタカー","修理費","送料","メルカリ","Amazon","楽天","100均","デパート","ドラッグストア","本屋","電気街","チケット","会費","寄付","お年玉","給料","お小遣い","臨時収入","ボーナス","利息","売上","還付金","その他"];
+
 window.onload = () => {
-    const savedPass = localStorage.getItem('keikyu_pass');
-    if (savedPass === CORRECT_PASS) {
-        document.getElementById('pass-area').classList.add('hidden');
-        document.getElementById('loading-view').classList.remove('hidden');
-        enterApp();
-    }
+    renderCats();
+    if (localStorage.getItem('keikyu_pass') === CORRECT_PASS) enterApp();
 };
 
-async function checkPass() {
-    const btn = document.getElementById('login-btn');
-    const input = document.getElementById('pass-input').value;
-    
-    if (input === CORRECT_PASS) {
-        btn.innerText = "ログイン中...";
-        btn.disabled = true;
-        try {
-            const res = await fetch(GAS_URL);
-            if (!res.ok) throw new Error();
-            localStorage.setItem('keikyu_pass', CORRECT_PASS);
-            enterApp();
-        } catch (e) {
-            alert("エラー: GASに接続できません。デプロイ設定を『全員』にしてください。");
-            btn.innerText = "ログイン";
-            btn.disabled = false;
-        }
-    } else {
-        alert("パスワードが違います");
-    }
+function renderCats() {
+    const area = document.getElementById('cat-area');
+    categories.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'cat-btn' + (c === selectedCat ? ' active' : '');
+        btn.innerText = c;
+        btn.onclick = () => {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedCat = c;
+        };
+        area.appendChild(btn);
+    });
+}
+
+function setType(t) {
+    selectedType = t;
+    document.getElementById('btn-out').className = 'type-btn' + (t==='支出'?' active-out':'');
+    document.getElementById('btn-in').className = 'type-btn' + (t==='収入'?' active-in':'');
+}
+
+function addNum(n) { currentAmount += n; document.getElementById('num-display').innerText = currentAmount; }
+function clearNum() { currentAmount = ""; document.getElementById('num-display').innerText = "0"; }
+
+function checkPass() {
+    if (document.getElementById('pass-input').value === CORRECT_PASS) {
+        localStorage.setItem('keikyu_pass', CORRECT_PASS);
+        enterApp();
+    } else { alert("パスワードエラー"); }
 }
 
 function enterApp() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('main-content').classList.remove('hidden');
-    initPanels();
-    loadData();
+    initPanels(); loadData();
 }
 
-function addNum(n) { currentAmount += n; document.getElementById('num-display').innerText = currentAmount; }
-function clearNum() { currentAmount = ""; document.getElementById('num-display').innerText = "0"; }
-function setCat(el, c) { document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); selectedCat = c; }
-function logout() { localStorage.removeItem('keikyu_pass'); location.reload(); }
 function initPanels() { 
-    const d = document.getElementById('total-display'); 
-    d.innerHTML = ''; 
+    const d = document.getElementById('total-display'); d.innerHTML = ''; 
     for(let i=0; i<6; i++) d.innerHTML += '<div class="panel flipping">0</div>'; 
 }
 
@@ -166,9 +153,9 @@ async function submitData() {
     const item = document.getElementById('item').value;
     if(!item || !currentAmount) return alert("入力してください");
     btn.innerText = "保存中..."; btn.disabled = true;
-    const file = document.getElementById('photo').files[0];
-    let b64 = ""; if(file){ const r = new FileReader(); r.readAsDataURL(file); await new Promise(res => r.onload = res); b64 = r.result.split(',')[1]; }
-    const body = { item, amount: currentAmount, category: selectedCat, photo: b64, filename: file?.name };
+    // 支出の場合はマイナスとして送信
+    const finalAmount = selectedType === "支出" ? "-" + currentAmount : currentAmount;
+    const body = { item, amount: finalAmount, category: selectedCat };
     await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(body) });
     location.reload();
 }
@@ -180,11 +167,19 @@ async function loadData() {
     const list = document.getElementById('history-list');
     list.innerHTML = '';
     data.forEach(row => {
-        total += parseInt(row.amount||0);
-        list.insertAdjacentHTML('afterbegin', `<div class="history-item"><img src="${row.image_url||''}" onerror="this.style.display='none'"><div class="history-info"><div class="history-name">${row.item}</div><div class="history-cat">${row.category}</div></div><div class="history-amount">¥${row.amount}</div></div>`);
+        const val = parseInt(row.amount||0);
+        total += val;
+        const cls = val >= 0 ? 'plus' : 'minus';
+        const sign = val >= 0 ? '+' : '';
+        list.insertAdjacentHTML('afterbegin', `<div class="history-item">
+            <div style="flex:1"><b>${row.item}</b><br><small>${row.category}</small></div>
+            <div class="history-amount ${cls}">${sign}${val}円</div>
+        </div>`);
     });
-    const s = total.toString().padStart(6, '0');
-    document.querySelectorAll('.panel').forEach((p, i) => { setTimeout(() => { p.classList.remove('flipping'); p.innerText = s[i]; }, i*100+500); });
+    const s = Math.abs(total).toString().padStart(6, '0');
+    document.querySelectorAll('.panel').forEach((p, i) => { 
+        setTimeout(() => { p.classList.remove('flipping'); p.innerText = s[i]; }, i*100+500); 
+    });
 }
 </script>
 </body>
