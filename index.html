@@ -3,243 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>お小遣い管理 Cloud Ver 3.5</title>
+    <title>Cloud Money Ver 5.5</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --main-color: #333; --accent-red: #d32f2f; --accent-blue: #1976d2; --bg-gray: #f8f9fa; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-gray); color: var(--main-color); }
+        /* カラー変数の定義 */
+        :root {
+            --bg: #ffffff;
+            --card: #f2f2f7;
+            --text: #000000;
+            --sub: #8e8e93;
+            --accent: #007aff;
+            --red: #ff3b30;
+            --green: #34c759;
+            --nav-bg: rgba(255, 255, 255, 0.9);
+            --input-bg: #ffffff;
+            --panel-bg: #f2f2f7;
+        }
+
+        /* ダークモード時の変数上書き */
+        [data-theme="dark"] {
+            --bg: #000000;
+            --card: #1c1c1e;
+            --text: #ffffff;
+            --sub: #8e8e93;
+            --accent: #0a84ff;
+            --red: #ff453a;
+            --green: #32d74b;
+            --nav-bg: rgba(28, 28, 30, 0.9);
+            --input-bg: #2c2c2e;
+            --panel-bg: #1a1a1a;
+        }
+
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
         .hidden { display: none !important; }
-        
-        /* ページ切り替えアニメーション */
-        .page { display: none; padding-bottom: 80px; }
+        .page { display: none; min-height: 100vh; padding-bottom: 90px; box-sizing: border-box; }
         .page.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ナビゲーションバー */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #eee; z-index: 1000; }
-        .nav-item { flex: 1; text-align: center; padding: 15px 0; font-size: 12px; cursor: pointer; color: #888; }
-        .nav-item.active { color: var(--main-color); font-weight: bold; }
+        /* モード切替ボタン */
+        .theme-toggle { position: fixed; top: 15px; right: 15px; z-index: 2000; background: var(--card); border: 1px solid var(--sub); color: var(--text); padding: 5px 10px; border-radius: 20px; font-size: 12px; cursor: pointer; }
 
-        /* ボード・カードデザイン */
-        .board { background: #1a1a1a; padding: 25px 10px; text-align: center; color: white; }
-        .patapata { display: inline-flex; gap: 4px; background: #000; padding: 8px; border-radius: 6px; }
-        .panel { width: 34px; height: 50px; background: #222; color: #fff; font-size: 36px; line-height: 50px; border-radius: 4px; font-family: monospace; border: 1px solid #444; }
-        .container { max-width: 500px; margin: auto; padding: 15px; }
-        .card { background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        /* ナビゲーション */
+        .nav { position: fixed; bottom: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(10px); display: flex; border-top: 0.5px solid var(--sub); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { flex: 1; text-align: center; padding: 12px 0; font-size: 10px; color: var(--sub); cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
 
-        /* 入力UI */
-        .type-switch { display: flex; gap: 10px; margin-bottom: 15px; }
-        .type-btn { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid #eee; background: #fff; cursor: pointer; font-weight: bold; }
-        .type-btn.active-out { border-color: var(--accent-red); color: var(--accent-red); }
-        .type-btn.active-in { border-color: var(--accent-blue); color: var(--accent-blue); }
-        input[type="text"], input[type="password"] { width: 100%; padding: 15px; border: 1px solid #eee; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
-        .amount-display { font-size: 32px; text-align: right; padding: 10px; background: #f8f9fa; border-radius: 10px; font-weight: bold; margin-bottom: 15px; }
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
-        .num-btn { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 12px; font-size: 20px; cursor: pointer; }
-        .cat-scroll { height: 120px; overflow-y: auto; border: 1px solid #eee; border-radius: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 10px; margin-bottom: 15px; }
-        .cat-btn { padding: 8px; border: 1px solid #eee; border-radius: 8px; font-size: 13px; background: #fff; }
-        .cat-btn.active { background: #333; color: #fff; }
+        .container { max-width: 500px; margin: auto; padding: 16px; }
+        .card { background: var(--card); padding: 20px; border-radius: 16px; margin-bottom: 16px; }
+        
+        input, select { width: 100%; padding: 14px; border: 1px solid var(--sub); border-radius: 12px; font-size: 16px; background: var(--input-bg); color: var(--text); box-sizing: border-box; margin-bottom: 12px; outline: none; }
+        .display { font-size: 42px; text-align: right; background: #000; color: #fff; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 15px; font-family: monospace; }
+        
+        /* テンキー */
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .num-btn { background: var(--input-bg); border: 1px solid var(--sub); padding: 18px; border-radius: 12px; color: var(--text); font-size: 24px; cursor: pointer; }
+        
+        /* カテゴリ */
+        .cat-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; max-height: 160px; overflow-y: auto; }
+        .cat-btn { padding: 10px 5px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--sub); color: var(--text); font-size: 12px; }
+        .cat-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-        .btn-submit { width: 100%; padding: 18px; border-radius: 12px; border: none; background: var(--main-color); color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-main { width: 100%; padding: 18px; border-radius: 14px; border: none; background: var(--accent); color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; }
+        
+        /* パタパタ */
+        .header-board { padding: 40px 10px; text-align: center; }
+        .patapata { display: inline-flex; gap: 4px; background: #000; padding: 12px; border-radius: 10px; }
+        .panel { width: 36px; height: 55px; background: #1a1a1a; color: #fff; font-size: 40px; line-height: 55px; border-radius: 4px; border-bottom: 3px solid #000; font-family: monospace; }
 
-        /* ローディング */
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .loader { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent-red); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* 現金計算 */
+        .money-item { background: var(--input-bg); padding: 14px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .count-btn { width: 35px; height: 35px; border-radius: 50%; border: none; background: var(--sub); color: #fff; font-size: 20px; }
+
+        /* 予算バー */
+        .progress-bg { height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-bottom: 15px; }
+        .progress-bar { height: 100%; transition: 0.5s ease-out; }
+
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; align-items: center; justify-content: center; color: #fff; }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 
-<div id="loading" class="hidden"><div class="loader"></div></div>
+<button class="theme-toggle" onclick="toggleTheme()">MODE CHANGE</button>
+<div id="loader" class="hidden">LOADING...</div>
 
-<div id="login-screen" style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff;">
-    <div style="width:80%; text-align:center;">
-        <h2>AUTHENTICATION</h2>
-        <input type="password" id="pass-input" placeholder="PASSCODE">
-        <button class="btn-submit" onclick="checkPass()">LOGIN</button>
+<div id="page-input" class="page active">
+    <div class="header-board">
+        <div class="patapata" id="total-display"></div>
+    </div>
+    <div class="container">
+        <div class="card">
+            <input type="text" id="item" placeholder="内容">
+            <div class="display" id="num-display">0</div>
+            <div class="numpad">
+                <script>for(let i=1;i<=9;i++)document.write(`<button class="num-btn" onclick="addNum('${i}')">${i}</button>`);</script>
+                <button class="num-btn" onclick="clearNum()" style="color:var(--red)">C</button>
+                <button class="num-btn" onclick="addNum('0')">0</button>
+                <button class="num-btn" onclick="backspace()">BS</button>
+            </div>
+            <div class="cat-box" id="cat-area-input" style="margin-top:20px;"></div>
+            <button class="btn-main" onclick="submitData()">保存する</button>
+        </div>
     </div>
 </div>
 
-<div id="main-content" class="hidden">
-    
-    <div id="page-input" class="page active">
-        <div class="board">
-            <div style="font-size:11px; color:#888; margin-bottom:5px;">CURRENT BALANCE</div>
-            <div class="patapata" id="total-display"></div>
+<div id="page-cash" class="page">
+    <div class="container">
+        <div class="card">
+            <h2>CASH COUNTER</h2>
+            <div class="display" id="cash-total">0</div>
+            <div id="cash-grid"></div>
+            <button class="btn-main" style="margin-top:20px; background:var(--sub);" onclick="resetCash()">リセット</button>
         </div>
-        <div class="container">
-            <div class="card">
-                <div class="type-switch">
-                    <button class="type-btn active-out" id="btn-out" onclick="setType('支出')">支払い (-)</button>
-                    <button class="type-btn" id="btn-in" onclick="setType('収入')">入金 (+)</button>
-                </div>
-                <input type="text" id="item" placeholder="内容（例：ランチ）">
-                <div class="amount-display" id="num-display">0</div>
-                <div class="numpad">
-                    <script>for(let i=1;i<=9;i++)document.write(`<button class="num-btn" onclick="addNum('${i}')">${i}</button>`);</script>
-                    <button class="num-btn" onclick="clearNum()">C</button>
-                    <button class="num-btn" onclick="addNum('0')">0</button>
-                    <button class="num-btn" onclick="backspace()">BS</button>
-                </div>
-                <div class="cat-scroll" id="cat-area"></div>
-                <button class="btn-submit" onclick="submitData()">保存する</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="page-chart" class="page">
-        <div class="container">
-            <div class="card">
-                <h3>支出分析 (今月)</h3>
-                <canvas id="myChart"></canvas>
-            </div>
-            <div class="card">
-                <h3>履歴</h3>
-                <button onclick="deleteAllHistory()" style="float:right; border:none; color:red; font-size:11px; background:none;">全消去</button>
-                <div id="history-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="nav-bar">
-        <div class="nav-item active" onclick="showPage('input', this)">入力</div>
-        <div class="nav-item" onclick="showPage('chart', this)">分析・履歴</div>
-        <div class="nav-item" onclick="logout()">終了</div>
     </div>
 </div>
+
+<div id="page-auto" class="page">
+    <div class="container">
+        <div class="card">
+            <h2>AUTOMATION / BUDGET</h2>
+            <select id="auto-day"><script>for(let i=1;i<=31;i++)document.write(`<option value="${i}">${i}日</option>`);</script></select>
+            <input type="text" id="auto-item" placeholder="内容">
+            <input type="number" id="auto-amount" placeholder="金額">
+            <div class="cat-box" id="cat-area-auto"></div>
+            <button class="btn-main" onclick="saveAuto()">自動記録を登録</button>
+            <hr style="border:0.5px solid var(--sub); margin:20px 0;">
+            <div id="budget-set-area"></div>
+            <button class="btn-main" style="background:var(--sub);" onclick="saveBudget()">予算を保存</button>
+        </div>
+    </div>
+</div>
+
+<div id="page-analysis" class="page">
+    <div class="container">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3>ANALYSIS</h3>
+                <select id="month-filter" style="width:auto; margin:0;" onchange="refreshAnalysis()">
+                    <option value="0">今月</option>
+                    <option value="1">先月</option>
+                </select>
+            </div>
+            <div style="height:200px;"><canvas id="chart-canvas"></canvas></div>
+        </div>
+        <div class="card">
+            <h3>BUDGET STATUS</h3>
+            <div id="budget-status"></div>
+        </div>
+        <div class="card">
+            <h3>HISTORY</h3>
+            <div id="history-list"></div>
+        </div>
+    </div>
+</div>
+
+<nav class="nav">
+    <div class="nav-item active" onclick="changePage('input', this)">入力</div>
+    <div class="nav-item" onclick="changePage('cash', this)">現金</div>
+    <div class="nav-item" onclick="changePage('auto', this)">設定</div>
+    <div class="nav-item" onclick="changePage('analysis', this)">分析</div>
+</nav>
 
 <script>
-const GAS_URL = "ここにGASのデプロイURLを貼り付け";
-const CORRECT_PASS = "518yhy01";
-let selectedType = "支出";
+const GAS_URL = "ここにGASのURL";
+const cats = ["食費","飲料","趣味","交通費","日用品","衣服","美容","医療","家賃","光熱費","通信費","教育","交際費","娯楽","給料","お小遣い","その他"];
+const cashUnits = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1];
+let cashCounts = {};
 let selectedCat = "食費";
 let currentAmount = "";
-let chartInstance = null;
+let db = { history: [], budgets: {} };
+let chart = null;
 
-const categories = ["食費","飲み物","趣味","交通費","日用品","衣服","美容","医療","家賃","光熱費","通信費","教育","交際費","娯楽","自分磨き","コンビニ","スーパー","外食","カフェ","ランチ","ディナー","お菓子","酒","タバコ","電車","バス","タクシー","ガソリン","駐車場","映画","ゲーム","本","雑誌","サブスク","雑貨","家具","家電","文房具","洗剤","薬","サプリ","美容院","化粧品","靴","バッグ","プレゼント","慶弔費","貯金","投資","保険","税金","振込手数料","雑費","不明","旅行","宿泊","レジャー","スポーツ","ジム","ペット","家族","子供","習い事","イベント","ライブ","カラオケ","漫画","アニメ","フィギュア","カードゲーム","模型","キャンプ","釣り","登山","自転車","バイク","レンタカー","修理費","送料","メルカリ","Amazon","楽天","100均","デパート","ドラッグストア","本屋","電気街","チケット","会費","寄付","お年玉","給料","お小遣い","臨時収入","ボーナス","利息","売上","還付金","その他"];
-
-window.onload = () => {
-    renderCats();
-    if (localStorage.getItem('keikyu_pass') === CORRECT_PASS) enterApp();
-};
-
-function showPage(pageId, el) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + pageId).classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    el.classList.add('active');
-    if(pageId === 'chart') updateChart();
+// テーマ切り替え機能
+function toggleTheme() {
+    const body = document.body;
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
 }
 
-function renderCats() {
-    const area = document.getElementById('cat-area');
-    categories.forEach(c => {
-        const btn = document.createElement('button');
-        btn.className = 'cat-btn' + (c === selectedCat ? ' active' : '');
-        btn.innerText = c;
-        btn.onclick = () => {
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+window.onload = () => {
+    // 保存されたテーマの読み込み
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+
+    initCats('cat-area-input');
+    initCats('cat-area-auto');
+    initCash();
+    initBudgetInputs();
+    loadData();
+};
+
+function changePage(p, el) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.getElementById('page-'+p).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    el.classList.add('active');
+    if(p === 'analysis') refreshAnalysis();
+}
+
+function initCats(id) {
+    const area = document.getElementById(id);
+    cats.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'cat-btn' + (c === selectedCat ? ' active' : '');
+        b.innerText = c;
+        b.onclick = () => {
+            document.querySelectorAll(`#${id} .cat-btn`).forEach(el => el.classList.remove('active'));
+            b.classList.add('active');
             selectedCat = c;
         };
-        area.appendChild(btn);
+        area.appendChild(b);
     });
 }
 
-function setType(t) {
-    selectedType = t;
-    document.getElementById('btn-out').className = 'type-btn' + (t==='支出'?' active-out':'');
-    document.getElementById('btn-in').className = 'type-btn' + (t==='収入'?' active-in':'');
+function initCash() {
+    const grid = document.getElementById('cash-grid');
+    cashUnits.forEach(u => {
+        cashCounts[u] = 0;
+        grid.insertAdjacentHTML('beforeend', `
+            <div class="money-item">
+                <span style="font-weight:bold;">${u.toLocaleString()}</span>
+                <div>
+                    <button class="count-btn" onclick="updateCash(${u},-1)">-</button>
+                    <span style="margin:0 15px; font-weight:bold;" id="count-${u}">0</span>
+                    <button class="count-btn" onclick="updateCash(${u},1)">+</button>
+                </div>
+            </div>`);
+    });
+}
+
+function updateCash(u, delta) {
+    cashCounts[u] = Math.max(0, cashCounts[u] + delta);
+    document.getElementById('count-'+u).innerText = cashCounts[u];
+    let total = 0;
+    for(let unit in cashCounts) total += unit * cashCounts[unit];
+    document.getElementById('cash-total').innerText = total.toLocaleString();
+}
+
+function resetCash() {
+    cashUnits.forEach(u => { cashCounts[u] = 0; document.getElementById('count-'+u).innerText = 0; });
+    document.getElementById('cash-total').innerText = 0;
+}
+
+function initBudgetInputs() {
+    const area = document.getElementById('budget-set-area');
+    cats.forEach(c => {
+        area.insertAdjacentHTML('beforeend', `<div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;"><span style="width:70px; font-size:12px;">${c}</span><input type="number" class="budget-input" data-cat="${c}" placeholder="0" style="margin:0; padding:8px;"></div>`);
+    });
+}
+
+async function loadData() {
+    document.getElementById('loader').classList.remove('hidden');
+    const res = await fetch(GAS_URL);
+    db = await res.json();
+    let total = 0;
+    db.history.forEach(r => total += r.amount);
+    const s = Math.abs(total).toString().padStart(6, '0');
+    const panels = document.getElementById('total-display');
+    panels.innerHTML = '';
+    for(let i=0; i<6; i++) panels.innerHTML += `<div class="panel">${s[i]}</div>`;
+    document.querySelectorAll('.budget-input').forEach(input => { input.value = db.budgets[input.dataset.cat] || ""; });
+    document.getElementById('loader').classList.add('hidden');
+}
+
+function refreshAnalysis() {
+    const filter = parseInt(document.getElementById('month-filter').value);
+    const now = new Date();
+    const targetMonth = now.getMonth() - filter;
+    const filtered = db.history.filter(r => new Date(r.date).getMonth() === targetMonth);
+    const summary = {};
+    filtered.forEach(r => { if(r.amount < 0) summary[r.category] = (summary[r.category] || 0) + Math.abs(r.amount); });
+
+    const ctx = document.getElementById('chart-canvas').getContext('2d');
+    if(chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: Object.keys(summary), datasets: [{ data: Object.values(summary), backgroundColor: ['#007aff', '#34c759', '#ff3b30', '#ff9500', '#af52de'] }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    const statusArea = document.getElementById('budget-status');
+    statusArea.innerHTML = '';
+    for(let cat in db.budgets) {
+        const limit = db.budgets[cat];
+        const used = summary[cat] || 0;
+        const per = Math.min(100, (used / limit) * 100);
+        statusArea.insertAdjacentHTML('beforeend', `<div style="margin-bottom:10px;"><div style="display:flex; justify-content:space-between; font-size:12px;"><span>${cat}</span><span>残: ${(limit-used).toLocaleString()}円</span></div><div class="progress-bg"><div class="progress-bar" style="width:${per}%; background:${per>90?'var(--red)':'var(--accent)'}"></div></div></div>`);
+    }
+
+    document.getElementById('history-list').innerHTML = filtered.reverse().map(r => `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--sub); font-size:13px;"><div><b>${r.item}</b><br><small>${r.category}</small></div><div style="color:${r.amount>=0?'var(--green)':'var(--red)'}">${r.amount.toLocaleString()}円</div></div>`).join('');
 }
 
 function addNum(n) { currentAmount += n; updateDisplay(); }
 function clearNum() { currentAmount = ""; updateDisplay(); }
-function backspace() { currentAmount = currentAmount.slice(0, -1); updateDisplay(); }
+function backspace() { currentAmount = currentAmount.slice(0,-1); updateDisplay(); }
 function updateDisplay() { document.getElementById('num-display').innerText = currentAmount ? parseInt(currentAmount).toLocaleString() : "0"; }
-
-function checkPass() {
-    if (document.getElementById('pass-input').value === CORRECT_PASS) {
-        localStorage.setItem('keikyu_pass', CORRECT_PASS);
-        enterApp();
-    } else { alert("PASS ERROR"); }
-}
-
-async function enterApp() {
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('main-content').classList.remove('hidden');
-    initPanels();
-    loadData();
-}
-
-function initPanels() { 
-    const d = document.getElementById('total-display'); d.innerHTML = ''; 
-    for(let i=0; i<6; i++) d.innerHTML += '<div class="panel">0</div>'; 
-}
 
 async function submitData() {
     const item = document.getElementById('item').value;
     if(!item || !currentAmount) return alert("入力ミス");
-    document.getElementById('loading').classList.remove('hidden');
-    const amt = selectedType === "支出" ? "-" + currentAmount : currentAmount;
-    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ item, amount: amt, category: selectedCat }) });
+    document.getElementById('loader').classList.remove('hidden');
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ item, amount: "-"+currentAmount, category: selectedCat }) });
     location.reload();
 }
 
-async function loadData() {
-    const res = await fetch(GAS_URL);
-    const data = await res.json();
-    let total = 0;
-    const list = document.getElementById('history-list');
-    list.innerHTML = '';
-    
-    data.forEach(row => {
-        const val = parseInt(row.amount);
-        total += val;
-        list.insertAdjacentHTML('afterbegin', `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
-            <div><b>${row.item}</b><br><small>${row.category}</small></div>
-            <div style="font-weight:bold; color:${val>=0?'blue':'red'}">${val.toLocaleString()}</div>
-        </div>`);
-    });
-    
-    const s = Math.abs(total).toString().padStart(6, '0');
-    document.querySelectorAll('.panel').forEach((p, i) => { p.innerText = s[i]; });
-    window.allData = data; // グラフ用にグローバル保存
-}
-
-function updateChart() {
-    const ctx = document.getElementById('myChart').getContext('2d');
-    const catTotals = {};
-    
-    window.allData.forEach(d => {
-        const val = parseInt(d.amount);
-        if (val < 0) { // 支出のみ集計
-            catTotals[d.category] = (catTotals[d.category] || 0) + Math.abs(val);
-        }
-    });
-
-    if (chartInstance) chartInstance.destroy();
-    
-    chartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(catTotals),
-            datasets: [{
-                data: Object.values(catTotals),
-                backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0', '#f67019']
-            }]
-        },
-        options: { plugins: { legend: { position: 'bottom' } } }
-    });
-}
-
-async function deleteAllHistory() {
-    if(!confirm("削除しますか？")) return;
-    document.getElementById('loading').classList.remove('hidden');
-    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "clear" }) });
+async function saveBudget() {
+    const budgets = {};
+    document.querySelectorAll('.budget-input').forEach(i => { if(i.value) budgets[i.dataset.cat] = Number(i.value); });
+    document.getElementById('loader').classList.remove('hidden');
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "saveBudget", budgets }) });
     location.reload();
 }
 
-function logout() { localStorage.removeItem('keikyu_pass'); location.reload(); }
+async function saveAuto() {
+    const day = document.getElementById('auto-day').value;
+    const item = document.getElementById('auto-item').value;
+    const amount = document.getElementById('auto-amount').value;
+    document.getElementById('loader').classList.remove('hidden');
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "saveAuto", day, item, amount, category: selectedCat }) });
+    location.reload();
+}
 </script>
 </body>
 </html>
