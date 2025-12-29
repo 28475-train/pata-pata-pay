@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cloud Money 6.0</title>
+    <title>Cloud Money 6.6</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg: #ffffff; --card: #f2f2f7; --text: #000000; --sub: #8e8e93; --accent: #007aff; --red: #ff3b30; --green: #34c759; --nav: rgba(255,255,255,0.9); }
@@ -11,31 +11,24 @@
         
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
         .hidden { display: none !important; }
-        .page { display: none; min-height: 100vh; padding-bottom: 100px; }
-        .page.active { display: block; }
+        .page { display: none; min-height: 100vh; padding: 20px 16px 120px; box-sizing: border-box; }
+        .page.active { display: block; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        /* 共通UI */
-        .container { max-width: 500px; margin: auto; padding: 16px; }
-        .card { background: var(--card); padding: 20px; border-radius: 16px; margin-bottom: 16px; }
-        .display { font-size: 40px; text-align: right; background: #000; color: #fff; padding: 15px; border-radius: 12px; font-weight: bold; font-family: monospace; margin-bottom: 15px; }
+        .card { background: var(--card); padding: 18px; border-radius: 20px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .display { font-size: 38px; text-align: right; background: #000; color: #fff; padding: 15px; border-radius: 12px; font-weight: bold; font-family: monospace; margin-bottom: 15px; border: 1px solid #333; }
         
         /* ナビゲーション */
-        .nav { position: fixed; bottom: 0; width: 100%; background: var(--nav); backdrop-filter: blur(10px); display: flex; border-top: 0.5px solid var(--sub); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { flex: 1; text-align: center; padding: 15px 0; font-size: 10px; color: var(--sub); cursor: pointer; }
-        .nav-item.active { color: var(--accent); }
+        .nav { position: fixed; bottom: 0; width: 100%; background: var(--nav); backdrop-filter: blur(15px); display: flex; overflow-x: auto; border-top: 0.5px solid var(--sub); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { flex: 1; text-align: center; padding: 12px 0; font-size: 10px; color: var(--sub); cursor: pointer; min-width: 60px; }
+        .nav-item.active { color: var(--accent); font-weight: bold; }
 
-        /* テンキー・ボタン */
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .num-btn { background: var(--bg); border: 1px solid var(--sub); padding: 20px; border-radius: 12px; color: var(--text); font-size: 24px; }
-        .btn-main { width: 100%; padding: 18px; border-radius: 14px; border: none; background: var(--accent); color: #fff; font-size: 17px; font-weight: bold; margin-top: 10px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid var(--sub); }
+        .btn-main { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--accent); color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--sub); background: var(--bg); color: var(--text); margin-bottom: 10px; box-sizing: border-box; outline: none; }
 
-        /* 現金計算 */
-        .money-item { background: var(--bg); padding: 12px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; border: 1px solid var(--sub); }
-        .count-btn { width: 35px; height: 35px; border-radius: 50%; border: none; background: var(--sub); color: #fff; font-size: 20px; }
-
-        /* ロード画面 */
         #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 3000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--card); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 30px; height: 30px; border: 3px solid var(--card); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -44,84 +37,81 @@
 <div id="loader">
     <div class="spinner"></div>
     <p id="loader-msg">CONNECTING...</p>
-    <button id="retry-btn" class="hidden" onclick="location.reload()" style="margin-top:20px;">再試行</button>
+    <button id="retry-btn" class="hidden" onclick="location.reload()" style="margin-top:20px; padding:10px 20px; border-radius:10px; border:none; background:var(--accent); color:#fff;">再試行</button>
 </div>
 
 <div id="page-input" class="page active">
-    <div class="container">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0;">INPUT</h2>
-            <button onclick="toggleTheme()" style="background:none; border:1px solid var(--sub); color:var(--text); padding:5px 10px; border-radius:15px; font-size:10px;">MODE</button>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">INPUT</h2>
+        <button onclick="toggleTheme()" style="background:none; border:1px solid var(--sub); color:var(--text); padding:4px 10px; border-radius:12px; font-size:10px;">THEME</button>
+    </div>
+    <div class="card" style="margin-top:15px;">
+        <input type="text" id="item" placeholder="何に使った？">
+        <div class="display" id="num-display">0</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+            <script>for(let i=1;i<=9;i++)document.write(`<button style="padding:18px; border-radius:12px; border:none; background:var(--card); color:var(--text); font-size:20px;" onclick="addNum('${i}')">${i}</button>`);</script>
+            <button style="padding:18px; border:none; background:var(--card); color:var(--red);" onclick="clearNum()">C</button>
+            <button style="padding:18px; border:none; background:var(--card); color:var(--text);" onclick="addNum('0')">0</button>
+            <button style="padding:18px; border:none; background:var(--card); color:var(--text);" onclick="backspace()">←</button>
         </div>
-        <div class="card">
-            <input type="text" id="item" placeholder="内容">
-            <div class="display" id="num-display">0</div>
-            <div class="numpad">
-                <script>for(let i=1;i<=9;i++)document.write(`<button class="num-btn" onclick="addNum('${i}')">${i}</button>`);</script>
-                <button class="num-btn" onclick="clearNum()" style="color:var(--red)">C</button>
-                <button class="num-btn" onclick="addNum('0')">0</button>
-                <button class="num-btn" onclick="backspace()">BS</button>
-            </div>
-            <button class="btn-main" onclick="submitData()">保存</button>
-        </div>
+        <button class="btn-main" onclick="submitData()">保存</button>
     </div>
 </div>
 
 <div id="page-cash" class="page">
-    <div class="container">
-        <div class="card">
-            <h2>CASH COUNTER</h2>
-            <div class="display" id="cash-total">0</div>
-            <div id="cash-grid"></div>
-            <button class="btn-main" style="background:var(--sub);" onclick="resetCash()">RESET</button>
-        </div>
+    <h2>CASH</h2>
+    <div class="card">
+        <div class="display" id="cash-total" style="background:#111; color:var(--green);">0</div>
+        <div id="cash-grid"></div>
+        <button class="btn-main" style="background:var(--sub); margin-top:15px;" onclick="resetCash()">RESET</button>
     </div>
 </div>
 
 <div id="page-analysis" class="page">
-    <div class="container">
-        <div class="card">
-            <h3>ANALYSIS</h3>
-            <div style="height:200px;"><canvas id="chart-canvas"></canvas></div>
-        </div>
-        <div class="card">
-            <h3>BUDGET STATUS</h3>
-            <div id="budget-status"></div>
-        </div>
-        <div class="card">
-            <h3>HISTORY</h3>
-            <div id="history-list"></div>
-        </div>
+    <h2>ANALYSIS</h2>
+    <div class="card" style="height:250px;"><canvas id="chart-canvas"></canvas></div>
+    <div class="card" id="history-list"></div>
+</div>
+
+<div id="page-assets" class="page">
+    <h2>ASSETS</h2>
+    <div class="card">
+        <p style="font-size:12px; color:var(--sub);">CURRENT TOTAL</p>
+        <div style="font-size:32px; font-weight:bold; margin:10px 0; color:var(--accent);" id="asset-sum">¥0</div>
+        <div style="height:150px;"><canvas id="asset-chart"></canvas></div>
+    </div>
+</div>
+
+<div id="page-wish" class="page">
+    <h2>WISH LIST</h2>
+    <div class="card" id="wish-list-area">
+        <div class="list-item"><span>貯金目標</span><span style="font-weight:bold; color:var(--accent);">¥1,000,000</span></div>
     </div>
 </div>
 
 <div id="page-setting" class="page">
-    <div class="container">
-        <div class="card">
-            <h3>AUTOMATION</h3>
-            <input type="number" id="auto-day" placeholder="日 (1-31)">
-            <input type="text" id="auto-item" placeholder="内容">
-            <input type="number" id="auto-amount" placeholder="金額">
-            <button class="btn-main" onclick="saveAuto()">自動設定を保存</button>
-        </div>
-        <div class="card">
-            <h3>BUDGET SET</h3>
-            <div id="budget-set-area"></div>
-            <button class="btn-main" onclick="saveBudget()">予算を保存</button>
-        </div>
+    <h2>SETTING</h2>
+    <div class="card">
+        <h3>AUTOMATION</h3>
+        <input type="number" id="auto-day" placeholder="毎月何日？">
+        <input type="text" id="auto-item" placeholder="項目（例：家賃）">
+        <input type="number" id="auto-amount" placeholder="金額">
+        <button class="btn-main" onclick="saveAuto()">自動登録を保存</button>
     </div>
+    <button class="btn-main" style="background:var(--red); margin-top:30px;" onclick="clearHistory()">データ全消去</button>
 </div>
 
 <nav class="nav">
     <div class="nav-item active" onclick="changePage('input', this)">入力</div>
     <div class="nav-item" onclick="changePage('cash', this)">現金</div>
     <div class="nav-item" onclick="changePage('analysis', this)">分析</div>
+    <div class="nav-item" onclick="changePage('assets', this)">資産</div>
+    <div class="nav-item" onclick="changePage('wish', this)">目標</div>
     <div class="nav-item" onclick="changePage('setting', this)">設定</div>
 </nav>
 
 <script>
-const GAS_URL = "ここにデプロイURL"; // 必ず /exec で終わるURL
-const cats = ["食費","飲料","趣味","交通費","日用品","美容","家賃","光熱費","給料","その他"];
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxq7Lpx74M3-3gXjYtvw5727fW23ULFuUpOy0OcZ3mrn-0XwFtAGHRMnroCNKKG5YEk/exec";
 let currentAmount = "";
 let db = { history: [], budgets: {} };
 let cashCounts = {};
@@ -136,26 +126,25 @@ function toggleTheme() {
 window.onload = () => {
     document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
     initCash();
-    initBudgetInputs();
     loadData();
-    // 10秒経っても終わらなければ再試行ボタンを出す
-    setTimeout(() => { 
-        if(!document.getElementById('loader').classList.contains('hidden')) {
-            document.getElementById('loader-msg').innerText = "TIMEOUT ERROR";
+    // タイムアウト監視
+    setTimeout(() => {
+        if (!document.getElementById('loader').classList.contains('hidden')) {
+            document.getElementById('loader-msg').innerText = "CONNECTION TIMEOUT";
             document.getElementById('retry-btn').classList.remove('hidden');
         }
-    }, 10000);
+    }, 8000);
 };
 
 async function loadData() {
     try {
         const res = await fetch(GAS_URL);
-        if(!res.ok) throw new Error();
+        if (!res.ok) throw new Error();
         db = await res.json();
         document.getElementById('loader').classList.add('hidden');
         refreshAnalysis();
     } catch(e) {
-        document.getElementById('loader-msg').innerText = "GAS URL ERROR";
+        document.getElementById('loader-msg').innerText = "GAS ERROR: CHECK DEPLOY";
         document.getElementById('retry-btn').classList.remove('hidden');
     }
 }
@@ -173,34 +162,46 @@ function initCash() {
     const grid = document.getElementById('cash-grid');
     units.forEach(u => {
         cashCounts[u] = 0;
-        grid.insertAdjacentHTML('beforeend', `<div class="money-item"><span>${u.toLocaleString()}円</span><div><button class="count-btn" onclick="updCash(${u},-1)">-</button><span style="margin:0 15px;" id="c-${u}">0</span><button class="count-btn" onclick="updCash(${u},1)">+</button></div></div>`);
+        grid.insertAdjacentHTML('beforeend', `
+            <div class="list-item">
+                <span>${u.toLocaleString()}円</span>
+                <div style="display:flex; align-items:center;">
+                    <button style="width:30px; height:30px; border-radius:50%; border:none; background:var(--sub); color:#fff;" onclick="updCash(${u},-1)">-</button>
+                    <span style="width:30px; text-align:center; font-weight:bold;" id="c-${u}">0</span>
+                    <button style="width:30px; height:30px; border-radius:50%; border:none; background:var(--sub); color:#fff;" onclick="updCash(${u},1)">+</button>
+                </div>
+            </div>`);
     });
 }
+
 function updCash(u, d) {
     cashCounts[u] = Math.max(0, cashCounts[u] + d);
     document.getElementById(`c-${u}`).innerText = cashCounts[u];
     let total = 0; Object.keys(cashCounts).forEach(k => total += k * cashCounts[k]);
     document.getElementById('cash-total').innerText = total.toLocaleString();
 }
-function resetCash() { Object.keys(cashCounts).forEach(k => { cashCounts[k]=0; document.getElementById(`c-${k}`).innerText=0; }); document.getElementById('cash-total').innerText=0; }
 
-function initBudgetInputs() {
-    const area = document.getElementById('budget-set-area');
-    cats.forEach(c => area.insertAdjacentHTML('beforeend', `<div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;"><span style="width:60px; font-size:12px;">${c}</span><input type="number" class="budget-in" data-cat="${c}" style="margin:0; padding:5px;"></div>`));
+function resetCash() {
+    Object.keys(cashCounts).forEach(k => { cashCounts[k]=0; document.getElementById(`c-${k}`).innerText=0; });
+    document.getElementById('cash-total').innerText=0;
 }
 
 function refreshAnalysis() {
     const summary = {};
-    db.history.forEach(r => { if(r.amount < 0) summary[r.category] = (summary[r.category] || 0) + Math.abs(r.amount); });
+    db.history.forEach(r => { if(r.amount < 0) summary[r.category || "その他"] = (summary[r.category || "その他"] || 0) + Math.abs(r.amount); });
     const ctx = document.getElementById('chart-canvas').getContext('2d');
     if(chart) chart.destroy();
     chart = new Chart(ctx, {
         type: 'doughnut',
-        data: { labels: Object.keys(summary), datasets: [{ data: Object.values(summary), backgroundColor: ['#007aff', '#34c759', '#ff3b30', '#ff9500', '#af52de'] }] },
-        options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        data: { labels: Object.keys(summary), datasets: [{ data: Object.values(summary), backgroundColor: ['#007aff', '#34c759', '#ff3b30', '#ff9500', '#af52de', '#5856d6'] }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text') } } } }
     });
     
-    document.getElementById('history-list').innerHTML = db.history.slice().reverse().map(r => `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--sub); font-size:12px;"><div>${r.item}<br><small>${r.category}</small></div><div style="color:${r.amount>=0?'var(--green)':'var(--red)'}">${r.amount.toLocaleString()}</div></div>`).join('');
+    document.getElementById('history-list').innerHTML = db.history.slice().reverse().slice(0, 20).map(r => `
+        <div class="list-item">
+            <div>${r.item}<br><small style="color:var(--sub)">${new Date(r.date).toLocaleDateString()}</small></div>
+            <div style="font-weight:bold; color:${r.amount>=0?'var(--green)':'var(--red)'}">${r.amount.toLocaleString()}</div>
+        </div>`).join('');
 }
 
 function addNum(n) { currentAmount += n; document.getElementById('num-display').innerText = parseInt(currentAmount).toLocaleString(); }
@@ -208,23 +209,27 @@ function clearNum() { currentAmount = ""; document.getElementById('num-display')
 function backspace() { currentAmount = currentAmount.slice(0,-1); document.getElementById('num-display').innerText = currentAmount ? parseInt(currentAmount).toLocaleString() : "0"; }
 
 async function submitData() {
-    const item = document.getElementById('item').value || "無題";
+    const item = document.getElementById('item').value || "支出";
+    if(!currentAmount) return;
     document.getElementById('loader').classList.remove('hidden');
     await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ item, amount: "-"+currentAmount, category: "その他" }) });
     location.reload();
 }
-async function saveBudget() {
-    const budgets = {}; document.querySelectorAll('.budget-in').forEach(i => { if(i.value) budgets[i.dataset.cat] = Number(i.value); });
-    document.getElementById('loader').classList.remove('hidden');
-    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "saveBudget", budgets }) });
-    location.reload();
-}
+
 async function saveAuto() {
     const day = document.getElementById('auto-day').value;
     const item = document.getElementById('auto-item').value;
     const amount = document.getElementById('auto-amount').value;
+    if(!day || !item || !amount) return;
     document.getElementById('loader').classList.remove('hidden');
-    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "saveAuto", day, item, amount, category: "その他" }) });
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "saveAuto", day, item, amount, category: "固定費" }) });
+    location.reload();
+}
+
+async function clearHistory() {
+    if(!confirm("全てのデータを消去します。よろしいですか？")) return;
+    document.getElementById('loader').classList.remove('hidden');
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "clear" }) });
     location.reload();
 }
 </script>
