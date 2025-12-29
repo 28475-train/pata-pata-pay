@@ -1,83 +1,185 @@
 <!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Black Money Pro</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --card: #121212;
+            --text: #ffffff;
+            --sub: #8e8e93;
+            --accent: #0a84ff;
+            --red: #ff453a;
+            --green: #32d74b;
+            --border: #2c2c2e;
+        }
 
-<html lang="ja"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"> <meta name="apple-mobile-web-app-capable" content="yes"> <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <title>Black Money Pro</title> <style> :root { --bg: #000000; --card: #121212; --text: #ffffff; --sub: #8e8e93; --accent: #0a84ff; --red: #ff453a; --green: #32d74b; --border: #2c2c2e; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            padding-top: env(safe-area-inset-top);
+        }
 
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        overflow-x: hidden;
-        padding-top: env(safe-area-inset-top);
-        -webkit-user-select: none;
+        .page { display: none; min-height: 100vh; padding: 20px 20px 160px; box-sizing: border-box; max-width: 600px; margin: 0 auto; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .card { background: var(--card); padding: 20px; border-radius: 24px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .display-container { background: #000; padding: 20px; border-radius: 20px; margin-bottom: 15px; border: 1px solid var(--accent); text-align: right; }
+        .display-val { font-size: 42px; font-weight: 700; font-family: monospace; }
+
+        input { width: 100%; padding: 16px; background: #1c1c1e; border: 1px solid var(--border); border-radius: 14px; color: #fff; font-size: 16px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
+
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .num-btn { background: var(--card); border: none; padding: 20px; border-radius: 16px; color: #fff; font-size: 24px; font-weight: 600; }
+        .num-btn:active { background: #2c2c2e; }
+
+        .btn-main { width: 100%; padding: 18px; border-radius: 16px; border: none; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; }
+
+        .nav { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 500px; background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(20px); display: flex; border-radius: 35px; border: 1px solid var(--border); padding: 8px; z-index: 2000; }
+        .nav-item { flex: 1; text-align: center; padding: 12px 5px; font-size: 11px; color: var(--sub); text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+
+        #loader { position: fixed; inset: 0; background: #000; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .error-info { color: var(--red); font-size: 13px; margin-top: 20px; display: none; background: #200; padding: 15px; border-radius: 12px; }
+
+        #guide-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 4000; display: none; align-items: center; justify-content: center; padding: 30px; }
+        .guide-content { background: var(--card); border: 1px solid var(--accent); border-radius: 24px; padding: 24px; width: 100%; max-width: 400px; }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <div style="width:30px; height:30px; border:3px solid #1c1c1e; border-top:3px solid var(--accent); border-radius:50%; animation:spin 1s linear infinite;"></div>
+    <p id="status-text" style="margin-top:20px; letter-spacing: 2px;">CONNECTING...</p>
+    <div id="debug-info" class="error-info"></div>
+    <button id="retry-btn" class="btn-main" style="display:none; width:200px; margin-top:20px;" onclick="location.reload()">再試行</button>
+</div>
+
+<div id="guide-overlay" onclick="this.style.display='none'">
+    <div class="guide-content" onclick="event.stopPropagation()">
+        <h2 style="margin-top:0; color:var(--accent);">INSTALL</h2>
+        <p style="font-size:14px; color:var(--sub);">1. ブラウザの共有ボタンをタップ</p>
+        <p style="font-size:14px; color:var(--sub);">2. 「ホーム画面に追加」を選択</p>
+        <button class="btn-main" onclick="document.getElementById('guide-overlay').style.display='none'">わかった</button>
+    </div>
+</div>
+
+<div id="page-home" class="page active">
+    <h2>NEW ENTRY</h2>
+    <div class="card">
+        <input type="text" id="item" placeholder="内容を入力" autocomplete="off">
+        <div class="display-container">
+            <div class="display-val" id="num-display">0</div>
+        </div>
+        <div class="numpad">
+            <script>for(let i=1;i<=9;i++)document.write(`<button class="num-btn" onclick="addNum('${i}')">${i}</button>`);</script>
+            <button class="num-btn" style="color:var(--red)" onclick="clearNum()">C</button>
+            <button class="num-btn" onclick="addNum('0')">0</button>
+            <button class="num-btn" onclick="backspace()">←</button>
+        </div>
+        <button class="btn-main" style="margin-top:20px;" onclick="submitData()">SAVE</button>
+    </div>
+</div>
+
+<div id="page-history" class="page">
+    <h2>HISTORY</h2>
+    <div id="history-list"></div>
+</div>
+
+<div id="page-setting" class="page">
+    <h2>SETTING</h2>
+    <div class="card">
+        <button class="btn-main" style="background:var(--card); border:1px solid var(--accent);" onclick="document.getElementById('guide-overlay').style.display='flex'">アプリ化ガイド表示</button>
+    </div>
+    <div class="card">
+        <h3>FIXED COST</h3>
+        <input type="number" id="auto-day" placeholder="毎月の日">
+        <input type="text" id="auto-item" placeholder="項目名">
+        <input type="number" id="auto-amount" placeholder="金額">
+        <button class="btn-main" onclick="saveAuto()">保存</button>
+    </div>
+    <button onclick="clearAll()" style="width:100%; background:none; border:none; color:var(--red); margin-top:40px;">全データ消去</button>
+</div>
+
+<nav class="nav">
+    <div class="nav-item active" onclick="changePage('home', this)">HOME</div>
+    <div class="nav-item" onclick="changePage('history', this)">HISTORY</div>
+    <div class="nav-item" onclick="changePage('setting', this)">SETTING</div>
+</nav>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwazdhzyupuspZ3u9QmNRTebSOTNN2Yx066TZRqLrlCWush7BA8Caeu5ugZQ4JNYBlq/exec";
+let currentAmount = "";
+let db = { history: [] };
+
+window.onload = () => {
+    loadData();
+    if(!localStorage.getItem('pwa_guide')) {
+        document.getElementById('guide-overlay').style.display = 'flex';
+        localStorage.setItem('pwa_guide', 'true');
     }
+};
 
-    .page { display: none; min-height: 100vh; padding: 20px 20px 160px; box-sizing: border-box; max-width: 600px; margin: 0 auto; }
-    .page.active { display: block; animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+async function loadData() {
+    const debug = document.getElementById('debug-info');
+    try {
+        const res = await fetch(GAS_URL);
+        if(!res.ok) throw new Error("通信エラー");
+        db = await res.json();
+        document.getElementById('loader').style.display = 'none';
+        renderHistory();
+    } catch(e) {
+        document.getElementById('status-text').innerText = "ERROR";
+        debug.style.display = "block";
+        debug.innerHTML = "<b>原因:</b> 承認未完了またはアクセス権限不足<br><br>GASエディタで「実行」ボタンを押し、権限を許可してから再度デプロイ（全員に公開）してください。";
+        document.getElementById('retry-btn').style.display = "block";
+    }
+}
 
-    .card { background: var(--card); padding: 20px; border-radius: 24px; margin-bottom: 16px; border: 1px solid var(--border); }
-    
-    .display-container { background: #000; padding: 20px; border-radius: 20px; margin-bottom: 15px; border: 1px solid var(--accent); text-align: right; }
-    .display-val { font-size: 42px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 2px; }
+function renderHistory() {
+    const list = document.getElementById('history-list');
+    list.innerHTML = db.history.slice().reverse().map(r => `
+        <div class="card" style="display:flex; justify-content:space-between;">
+            <span>${r.item}<br><small style="color:var(--sub)">${new Date(r.date).toLocaleDateString()}</small></span>
+            <span style="font-weight:bold; color:${r.amount<0?'var(--red)':'var(--green)'}">${r.amount.toLocaleString()}</span>
+        </div>`).join('');
+}
 
-    input { width: 100%; padding: 16px; background: #1c1c1e; border: 1px solid var(--border); border-radius: 14px; color: #fff; font-size: 16px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
-    input:focus { border-color: var(--accent); }
+function changePage(p, el) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.getElementById('page-'+p).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    el.classList.add('active');
+}
 
-    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .num-btn { background: var(--card); border: none; padding: 20px; border-radius: 16px; color: #fff; font-size: 24px; font-weight: 600; active-opacity: 0.5; }
-    .num-btn:active { background: #2c2c2e; }
+function addNum(n) { if(currentAmount.length < 9) currentAmount += n; updateDisp(); }
+function clearNum() { currentAmount = ""; updateDisp(); }
+function backspace() { currentAmount = currentAmount.slice(0,-1); updateDisp(); }
+function updateDisp() { document.getElementById('num-display').innerText = currentAmount ? parseInt(currentAmount).toLocaleString() : "0"; }
 
-    .btn-main { width: 100%; padding: 18px; border-radius: 16px; border: none; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-    .btn-main:active { opacity: 0.7; transform: scale(0.98); }
+async function submitData() {
+    const item = document.getElementById('item').value || "支出";
+    if(!currentAmount) return;
+    document.getElementById('loader').style.display = 'flex';
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ item, amount: "-"+currentAmount, category: "生活費" }) });
+    location.reload();
+}
 
-    .nav { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 500px; background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(20px); display: flex; border-radius: 35px; border: 1px solid var(--border); padding: 8px; z-index: 2000; }
-    .nav-item { flex: 1; text-align: center; padding: 12px 5px; font-size: 12px; font-weight: 600; color: var(--sub); text-decoration: none; cursor: pointer; }
-    .nav-item.active { color: var(--accent); }
-
-    #guide-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 4000; display: none; align-items: center; justify-content: center; padding: 30px; }
-    .guide-content { background: var(--card); border: 1px solid var(--accent); border-radius: 24px; padding: 24px; width: 100%; max-width: 400px; }
-    .guide-step { margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-start; }
-    .step-num { background: var(--accent); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; font-weight: bold; }
-
-    #loader { position: fixed; inset: 0; background: #000; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; letter-spacing: 4px; }
-    
-    .toast { position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 12px 24px; border-radius: 20px; font-weight: bold; display: none; z-index: 5000; }
-</style>
-</head> <body>
-
-<div id="loader">LOADING...</div> <div id="toast" class="toast">SAVED!</div>
-
-<div id="guide-overlay" onclick="closeGuide()"> <div class="guide-content" onclick="event.stopPropagation()"> <h2 style="margin-top:0; color:var(--accent); text-align:center;">APP GUIDE</h2> <p style="font-size:14px; color:var(--sub); margin-bottom:20px; text-align:center;">ホーム画面に追加してアプリとして使えます</p> <div class="guide-step"> <div class="step-num">1</div> <div style="font-size:14px;">ブラウザの「共有ボタン」をタップ</div> </div> <div class="guide-step"> <div class="step-num">2</div> <div style="font-size:14px;">「ホーム画面に追加」を選択</div> </div> <div class="guide-step"> <div class="step-num">3</div> <div style="font-size:14px;">アイコンから起動すれば完了！</div> </div> <button class="btn-main" onclick="closeGuide()">閉じる</button> </div> </div>
-
-<div id="page-home" class="page active"> <h2 style="letter-spacing:1px;">PRO ENTRY</h2> <div class="card"> <input type="text" id="item" placeholder="内容を入力（例：ランチ）" autocomplete="off"> <div class="display-container"> <div class="display-val" id="num-display">0</div> </div> <div class="numpad"> <script>for(let i=1;i<=9;i++)document.write(&lt;button class=&quot;num-btn&quot; onclick=&quot;addNum(&#39;${i}&#39;)&quot;&gt;${i}&lt;/button&gt;);</script> <button class="num-btn" style="color:var(--red)" onclick="clearNum()">C</button> <button class="num-btn" onclick="addNum('0')">0</button> <button class="num-btn" onclick="backspace()">←</button> </div> <button class="btn-main" style="margin-top:20px;" onclick="submitData()">SAVE TRANSACTION</button> </div> </div>
-
-<div id="page-stats" class="page"> <h2>HISTORY</h2> <div id="history-list"></div> </div>
-
-<div id="page-setting" class="page"> <h2>SETTINGS</h2> <div class="card"> <button class="btn-main" style="background:var(--card); border:1px solid var(--accent);" onclick="openGuide()">アプリ化ガイドを表示</button> </div> <div class="card"> <h3 style="margin-top:0;">FIXED COST (AUTO)</h3> <p style="font-size:12px; color:var(--sub);">毎月の固定費を自動登録します</p> <input type="number" id="auto-day" placeholder="振込日（1-31）"> <input type="text" id="auto-item" placeholder="固定費名（例：家賃）"> <input type="number" id="auto-amount" placeholder="金額"> <button class="btn-main" onclick="saveAuto()">自動設定を保存</button> </div> <div style="text-align:center; margin-top:50px;"> <button onclick="clearHistory()" style="color:var(--red); background:none; border:none; font-size:14px; font-weight:600;">すべてのデータを初期化</button> </div> </div>
-
-<nav class="nav"> <div class="nav-item active" onclick="changePage('home', this)">HOME</div> <div class="nav-item" onclick="changePage('stats', this)">HISTORY</div> <div class="nav-item" onclick="changePage('setting', this)">SETTING</div> </nav>
-
-<script> const GAS_URL = "https://script.google.com/macros/s/AKfycbxq7Lpx74M3-3gXjYtvw5727fW23ULFuUpOy0OcZ3mrn-0XwFtAGHRMnroCNKKG5YEk/exec"; let currentAmount = ""; let db = { history: [] };
-
-window.onload = () => { loadData(); if(!localStorage.getItem('guide_v77_shown')) { openGuide(); localStorage.setItem('guide_v77_shown', 'true'); } };
-
-function openGuide() { document.getElementById('guide-overlay').style.display = 'flex'; } function closeGuide() { document.getElementById('guide-overlay').style.display = 'none'; }
-
-function showToast() { const t = document.getElementById('toast'); t.style.display = 'block'; setTimeout(() => { t.style.display = 'none'; }, 2000); }
-
-async function loadData() { try { const res = await fetch(GAS_URL); db = await res.json(); document.getElementById('loader').style.display = 'none'; refreshList(); } catch(e) { console.error(e); } }
-
-function changePage(p, el) { document.querySelectorAll('.page').forEach(page => page.classList.remove('active')); document.getElementById('page-'+p).classList.add('active'); document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); el.classList.add('active'); }
-
-function refreshList() { const list = document.getElementById('history-list'); if(!db.history || db.history.length === 0) { list.innerHTML = '<div class="card" style="color:var(--sub); text-align:center;">履歴がありません</div>'; return; } list.innerHTML = db.history.slice().reverse().map(r => &lt;div class=&quot;card&quot; style=&quot;display:flex; justify-content:space-between; align-items:center;&quot;&gt; &lt;div&gt; &lt;div style=&quot;font-weight:700;&quot;&gt;${r.item}&lt;/div&gt; &lt;div style=&quot;font-size:12px; color:var(--sub);&quot;&gt;${new Date(r.date).toLocaleDateString()}&lt;/div&gt; &lt;/div&gt; &lt;div style=&quot;font-size:20px; font-weight:700; color:${r.amount&gt;=0?&#39;var(--green)&#39;:&#39;var(--red)&#39;}&quot;&gt; ${r.amount.toLocaleString()} &lt;/div&gt; &lt;/div&gt;).join(''); }
-
-function addNum(n) { if(currentAmount.length < 9) currentAmount += n; updateDisplay(); } function clearNum() { currentAmount = ""; updateDisplay(); } function backspace() { currentAmount = currentAmount.slice(0,-1); updateDisplay(); } function updateDisplay() { document.getElementById('num-display').innerText = currentAmount ? parseInt(currentAmount).toLocaleString() : "0"; }
-
-async function submitData() { const item = document.getElementById('item').value || "支出"; if(!currentAmount) return; document.getElementById('loader').style.display = 'flex'; await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ item, amount: "-"+currentAmount, category: "生活費" }) }); showToast(); currentAmount = ""; document.getElementById('item').value = ""; updateDisplay(); loadData(); }
-
-function saveAuto() { const day = document.getElementById('auto-day').value; const item = document.getElementById('auto-item').value; const amt = document.getElementById('auto-amount').value; if(!day || !item || !amt) return alert("すべて入力してください"); localStorage.setItem('auto_config', JSON.stringify({day, item, amt})); alert("自動設定を保存しました（現在はブラウザ内保存のみ）"); }
-
-async function clearHistory() { if(!confirm("すべてのデータを完全に消去しますか？")) return; document.getElementById('loader').style.display = 'flex'; await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "clear" }) }); location.reload(); } </script>
-
-</body> </html>
+async function clearAll() {
+    if(!confirm("全消去しますか？")) return;
+    document.getElementById('loader').style.display = 'flex';
+    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "clear" }) });
+    location.reload();
+}
+</script>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+</body>
+</html>
