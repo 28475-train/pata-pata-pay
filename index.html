@@ -7,16 +7,16 @@
     <title>お小遣い管理 Cloud Ver 2.5</title>
     <style>
         :root { --main-color: #333; --accent-red: #e60012; --bg-gray: #f5f5f7; --card-bg: #ffffff; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg-gray); color: var(--main-color); -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg-gray); color: var(--main-color); -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         .hidden { display: none !important; }
         
-        /* ログイン・ローディング画面（白背景） */
+        /* ログイン・待機画面 */
         #login-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; position: fixed; width: 100%; top: 0; left: 0; z-index: 1000; }
         .loader-text { margin-bottom: 20px; font-size: 14px; color: #888; letter-spacing: 2px; }
         .blink { animation: blink 1s step-end infinite; }
         @keyframes blink { 50% { opacity: 0; } }
 
-        /* パタパタ表示エリア（ここだけ鉄道要素） */
+        /* パタパタ表示エリア */
         .board { background: #222; padding: 25px 10px; text-align: center; border-bottom: 4px solid #ddd; }
         .patapata { display: inline-flex; gap: 4px; background: #000; padding: 10px; border-radius: 4px; }
         .panel { width: 32px; height: 50px; background: #1a1a1a; color: #fff; font-size: 36px; line-height: 50px; border-radius: 4px; overflow: hidden; font-family: 'Courier New', monospace; position: relative; border: 1px solid #333; }
@@ -24,32 +24,27 @@
         .flipping { animation: flip 0.1s infinite; }
         @keyframes flip { 0% { transform: rotateX(0deg); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg); } }
         
-        /* メインレイアウト */
         .container { max-width: 600px; margin: auto; padding: 20px; display: grid; gap: 20px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         h3 { margin: 0 0 15px 0; font-size: 16px; color: #666; }
         
-        /* 入力UI */
-        input[type="text"] { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; background: #fafafa; }
-        .amount-display { font-size: 32px; text-align: right; padding: 10px; background: #f0f0f0; border-radius: 8px; margin-bottom: 15px; font-family: monospace; font-weight: bold; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; background: #fafafa; }
+        .amount-display { font-size: 32px; text-align: right; padding: 10px; background: #f0f0f0; border-radius: 8px; margin-bottom: 15px; font-family: monospace; font-weight: bold; min-height: 48px; }
         
-        /* テンキー */
         .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
-        .num-btn { background: #fff; border: 1px solid #eee; padding: 18px; border-radius: 10px; font-size: 20px; font-weight: 500; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .num-btn { background: #fff; border: 1px solid #eee; padding: 18px; border-radius: 10px; font-size: 20px; font-weight: 500; cursor: pointer; }
         .num-btn:active { background: #f0f0f0; }
         
-        /* カテゴリ */
         .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .cat-btn { padding: 12px; border: 1px solid #eee; border-radius: 10px; background: #fff; font-size: 14px; cursor: pointer; }
         .cat-btn.active { background: var(--main-color); color: #fff; border-color: var(--main-color); }
         
-        /* ボタン */
-        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-black { background: var(--main-color); color: white; }
         .btn-gray { background: #eee; color: #666; }
         .btn-submit { background: var(--accent-red); color: white; margin-top: 20px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        /* 履歴 */
         .history-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
         .history-item img { width: 45px; height: 45px; border-radius: 8px; margin-right: 12px; object-fit: cover; background: #eee; }
         .history-info { flex-grow: 1; }
@@ -65,10 +60,10 @@
         <div class="loader-text blink">LOADING...</div>
         <div style="font-size:12px; color:#ccc;">まもなく到着します</div>
     </div>
-    <div id="pass-area" style="text-align:center;">
+    <div id="pass-area" style="text-align:center; width: 80%; max-width: 300px;">
         <div style="font-weight:bold; margin-bottom:20px; font-size:18px;">認証が必要です</div>
-        <input type="password" id="pass-input" placeholder="パスワードを入力" style="width:220px; text-align:center; margin-bottom:10px;">
-        <button class="btn btn-black" onclick="checkPass()" style="width:220px;">ログイン</button>
+        <input type="password" id="pass-input" placeholder="パスワードを入力">
+        <button class="btn btn-black" id="login-btn" onclick="checkPass()">ログイン</button>
     </div>
 </div>
 
@@ -77,7 +72,6 @@
         <div style="color:#888; font-size:10px; margin-bottom:8px; letter-spacing:1px;">TOTAL BALANCE</div>
         <div class="patapata" id="total-display"></div>
     </div>
-
     <div class="container">
         <div class="card">
             <h3>支出の記録</h3>
@@ -100,14 +94,11 @@
             <div class="cat-grid">
                 <button class="cat-btn active" onclick="setCat(this, '食費')">食費</button>
                 <button class="cat-btn" onclick="setCat(this, '趣味')">趣味</button>
-                <button class="cat-btn" onclick="setCat(this, '交通費')">交通費</button>
-                <button class="cat-btn" onclick="setCat(this, '他')">その他</button>
             </div>
             <button class="btn btn-gray" onclick="document.getElementById('photo').click()">📷 写真を添付</button>
             <input type="file" id="photo" accept="image/*" capture="camera" class="hidden">
             <button class="btn btn-submit" id="submit-btn" onclick="submitData()">記録を保存する</button>
         </div>
-
         <div class="card">
             <h3>最近の履歴</h3>
             <div id="history-list"></div>
@@ -127,41 +118,53 @@ window.onload = () => {
     if (savedPass === CORRECT_PASS) {
         document.getElementById('pass-area').classList.add('hidden');
         document.getElementById('loading-view').classList.remove('hidden');
-        setTimeout(enterApp, 1000);
+        enterApp();
     }
 };
 
-function addNum(n) { currentAmount += n; updateNumDisplay(); }
-function clearNum() { currentAmount = ""; updateNumDisplay(); }
-function updateNumDisplay() { document.getElementById('num-display').innerText = currentAmount || "0"; }
-
-function checkPass() {
-    if (document.getElementById('pass-input').value === CORRECT_PASS) {
-        localStorage.setItem('keikyu_pass', CORRECT_PASS);
-        enterApp();
-    } else { alert("パスワードが正しくありません"); }
+async function checkPass() {
+    const btn = document.getElementById('login-btn');
+    const input = document.getElementById('pass-input').value;
+    
+    if (input === CORRECT_PASS) {
+        btn.innerText = "ログイン中...";
+        btn.disabled = true;
+        try {
+            const res = await fetch(GAS_URL);
+            if (!res.ok) throw new Error();
+            localStorage.setItem('keikyu_pass', CORRECT_PASS);
+            enterApp();
+        } catch (e) {
+            alert("エラー: GASに接続できません。デプロイ設定を『全員』にしてください。");
+            btn.innerText = "ログイン";
+            btn.disabled = false;
+        }
+    } else {
+        alert("パスワードが違います");
+    }
 }
-
-function logout() { localStorage.removeItem('keikyu_pass'); location.reload(); }
 
 function enterApp() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('main-content').classList.remove('hidden');
-    initPanels(); loadData();
+    initPanels();
+    loadData();
 }
 
+function addNum(n) { currentAmount += n; document.getElementById('num-display').innerText = currentAmount; }
+function clearNum() { currentAmount = ""; document.getElementById('num-display').innerText = "0"; }
 function setCat(el, c) { document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); selectedCat = c; }
-
-function initPanels() {
-    const d = document.getElementById('total-display');
-    d.innerHTML = '';
-    for(let i=0; i<6; i++) d.innerHTML += '<div class="panel flipping">0</div>';
+function logout() { localStorage.removeItem('keikyu_pass'); location.reload(); }
+function initPanels() { 
+    const d = document.getElementById('total-display'); 
+    d.innerHTML = ''; 
+    for(let i=0; i<6; i++) d.innerHTML += '<div class="panel flipping">0</div>'; 
 }
 
 async function submitData() {
     const btn = document.getElementById('submit-btn');
     const item = document.getElementById('item').value;
-    if(!item || !currentAmount) return alert("内容を入力してください");
+    if(!item || !currentAmount) return alert("入力してください");
     btn.innerText = "保存中..."; btn.disabled = true;
     const file = document.getElementById('photo').files[0];
     let b64 = ""; if(file){ const r = new FileReader(); r.readAsDataURL(file); await new Promise(res => r.onload = res); b64 = r.result.split(',')[1]; }
@@ -171,17 +174,18 @@ async function submitData() {
 }
 
 async function loadData() {
-    try {
-        const res = await fetch(GAS_URL);
-        const data = await res.json();
-        let total = 0;
-        const list = document.getElementById('history-list');
-        list.innerHTML = '';
-        data.forEach(row => {
-            total += parseInt(row.amount||0);
-            list.insertAdjacentHTML('afterbegin', `<div class="history-item"><img src="${row.image_url || ''}" onerror="this.style.display='none'">
-                <div class="history-info"><div class="history-name">${row.item}</div><div class="history-cat">${row.category}</div></div>
-                <div class="history-amount">¥${row.amount}</div></div>`);
-        });
-        const s = total.toString().padStart(6, '0');
-        document.querySelectorAll('.panel').forEach((p, i) => { setTimeout(() => { p.classList.remove('flipping'); p.innerText
+    const res = await fetch(GAS_URL);
+    const data = await res.json();
+    let total = 0;
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+    data.forEach(row => {
+        total += parseInt(row.amount||0);
+        list.insertAdjacentHTML('afterbegin', `<div class="history-item"><img src="${row.image_url||''}" onerror="this.style.display='none'"><div class="history-info"><div class="history-name">${row.item}</div><div class="history-cat">${row.category}</div></div><div class="history-amount">¥${row.amount}</div></div>`);
+    });
+    const s = total.toString().padStart(6, '0');
+    document.querySelectorAll('.panel').forEach((p, i) => { setTimeout(() => { p.classList.remove('flipping'); p.innerText = s[i]; }, i*100+500); });
+}
+</script>
+</body>
+</html>
